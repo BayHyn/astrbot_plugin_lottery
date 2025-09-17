@@ -1,0 +1,94 @@
+{
+    "default_prize_config": {
+        "description": "默认的抽奖活动参数",
+        "hint": "开启抽奖时，如果未提供活动参数，则使用此参数",
+        "type": "object",
+        "items": {
+            "special": {
+                "description": "特等奖",
+                "type": "object",
+                "items": {
+                    "probability": {
+                        "description": "中奖概率",
+                        "type": "float",
+                        "default": 0.01
+                        
+                    },
+                    "name": {
+                        "description": "奖品名称",
+                        "type": "string",
+                        "default": "电脑"
+                    },
+                    "count": {
+                        "description": "奖品数量",
+                        "type": "int",
+                        "default": 1
+                    }
+                }
+            },
+            "first": {
+                "description": "一等奖",
+                "type": "object",
+                "items": {
+                    "probability": {
+                        "description": "中奖概率",
+                        "type": "float",
+                        "default": 0.05
+                    },
+                    "name": {
+                        "description": "奖品名称",
+                        "type": "string",
+                        "default": "手机"
+                    },
+                    "count": {
+                        "description": "奖品数量",
+                        "type": "int",
+                        "default": 3
+                    }
+                }
+            },
+            "second": {
+                "description": "二等奖",
+                "type": "object",
+                "items": {
+                    "probability": {
+                        "description": "中奖概率",
+                        "type": "float",
+                        "default": 0.1
+                    },
+                    "name": {
+                        "description": "奖品名称",
+                        "type": "string",
+                        "default": "手表"
+                    },
+                    "count": {
+                        "description": "奖品数量",
+                        "type": "int",
+                        "default": 5
+                    }
+                }
+            },
+            "third": {
+                "description": "三等奖",
+                "type": "object",
+                "items": {
+                    "probability": {
+                        "description": "中奖概率",
+                        "type": "float",
+                        "default": 0.2
+                    },
+                    "name": {
+                        "description": "奖品名称",
+                        "type": "string",
+                        "default": "钢笔"
+                    },
+                    "count": {
+                        "description": "奖品数量",
+                        "type": "int",
+                        "default": 10
+                    }
+                }
+            }
+        }
+    }
+}
