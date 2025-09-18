@@ -9,7 +9,7 @@ from .core.lottery import LotteryManager, LotteryPersistence, PrizeLevel
 import re
 
 
-@register("astrbot_plugin_lottery", "Zhalslar", "群聊抽奖插件", "1.0.0")
+@register("astrbot_plugin_lottery", "Zhalslar", "群聊抽奖插件", "...")
 class LotteryPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
@@ -40,16 +40,13 @@ class LotteryPlugin(Star):
         if not prize_level:
             yield event.plain_result(msg)
             return
+        activity = self.manager.activities.get(event.get_group_id())
+        if not activity or prize_level not in activity.prize_config:
+            yield event.plain_result(msg)   # 降级回退
+            return
 
-        yield event.plain_result(f"{prize_level.emoji} {msg}")
-
-    @filter.event_message_type(filter.EventMessageType.GROUP_MESSAGE)
-    @filter.permission_type(filter.PermissionType.ADMIN)
-    @filter.command("关闭抽奖")
-    async def stop_lottery(self, event: AstrMessageEvent):
-        """关闭抽奖活动"""
-        _, msg = self.manager.stop_activity(event.get_group_id())
-        yield event.plain_result(msg)
+        prize_name = activity.prize_config[prize_level]["name"]
+        yield event.plain_result(f"{prize_level.emoji} {msg}: {prize_name}")
 
     @filter.event_message_type(filter.EventMessageType.GROUP_MESSAGE)
     @filter.permission_type(filter.PermissionType.ADMIN)
@@ -58,12 +55,12 @@ class LotteryPlugin(Star):
         """设置当前活动的奖项
         用法：设置奖项 <奖项等级> <概率> <数量>
         """
-        m = re.match(r"设置奖项\s+(特等奖|一等奖|二等奖|三等奖)\s+(\d*\.?\d+)\s+(\d+)", event.message_str)
+        m = re.match(
+            r"设置奖项\s+(特等奖|一等奖|二等奖|三等奖)\s+(\d*\.?\d+)\s+(\d+)",
+            event.message_str,
+        )
         if not m:
-            yield event.plain_result(
-                "格式错误\n"
-                "正确示例：设置奖项 特等奖 0.01 1"
-            )
+            yield event.plain_result("格式错误\n正确示例：设置奖项 特等奖 0.01 1")
             return
 
         prize_name, prob, count = m.group(1), float(m.group(2)), int(m.group(3))
@@ -71,10 +68,7 @@ class LotteryPlugin(Star):
             yield event.plain_result("概率须在 0-1 之间，数量须为正整数")
             return
 
-        lvl = {"特等奖": PrizeLevel.SPECIAL,
-            "一等奖": PrizeLevel.FIRST,
-            "二等奖": PrizeLevel.SECOND,
-            "三等奖": PrizeLevel.THIRD}[prize_name]
+        lvl = PrizeLevel[prize_name.replace("奖", "").upper()]
 
         ok = self.manager.set_prize_config(event.get_group_id(), lvl, prob, count)
         if not ok:
@@ -86,6 +80,20 @@ class LotteryPlugin(Star):
             f"中奖概率：{prob * 100:.1f} %\n"
             f"奖品数量：{count} 个"
         )
+
+    @filter.event_message_type(filter.EventMessageType.GROUP_MESSAGE)
+    @filter.permission_type(filter.PermissionType.ADMIN)
+    @filter.command("关闭抽奖")
+    async def stop_lottery(self, event: AstrMessageEvent):
+        """关闭抽奖活动"""
+        _, msg = self.manager.stop_activity(event.get_group_id())
+        yield event.plain_result(msg)
+
+    @filter.command("重置抽奖")
+    @filter.permission_type(filter.PermissionType.ADMIN)
+    async def reset_lottery(self, event: AstrMessageEvent):
+        ok = self.manager.delete_activity(event.get_group_id())
+        yield event.plain_result("本群抽奖已清空，可重新开启" if ok else "当前无抽奖可重置")
 
     @filter.event_message_type(filter.EventMessageType.GROUP_MESSAGE)
     @filter.command("抽奖状态")

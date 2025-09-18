@@ -11,13 +11,13 @@
                     "probability": {
                         "description": "中奖概率",
                         "type": "float",
-                        "default": 0.01
+                        "default": 0.005
                         
                     },
                     "name": {
                         "description": "奖品名称",
                         "type": "string",
-                        "default": "电脑"
+                        "default": "键盘"
                     },
                     "count": {
                         "description": "奖品数量",
@@ -33,12 +33,12 @@
                     "probability": {
                         "description": "中奖概率",
                         "type": "float",
-                        "default": 0.05
+                        "default": 0.015
                     },
                     "name": {
                         "description": "奖品名称",
                         "type": "string",
-                        "default": "手机"
+                        "default": "U盘"
                     },
                     "count": {
                         "description": "奖品数量",
@@ -54,12 +54,12 @@
                     "probability": {
                         "description": "中奖概率",
                         "type": "float",
-                        "default": 0.1
+                        "default": 0.04
                     },
                     "name": {
                         "description": "奖品名称",
                         "type": "string",
-                        "default": "手表"
+                        "default": "小风扇"
                     },
                     "count": {
                         "description": "奖品数量",
@@ -75,17 +75,38 @@
                     "probability": {
                         "description": "中奖概率",
                         "type": "float",
-                        "default": 0.2
+                        "default": 0.1
                     },
                     "name": {
                         "description": "奖品名称",
                         "type": "string",
-                        "default": "钢笔"
+                        "default": "钥匙扣"
                     },
                     "count": {
                         "description": "奖品数量",
                         "type": "int",
                         "default": 10
+                    }
+                }
+            },
+            "participate": {
+                "description": "参与奖",
+                "type": "object",
+                "items": {
+                    "probability": {
+                        "description": "中奖概率",
+                        "type": "float",
+                        "default": 0.84
+                    },
+                    "name": {
+                        "description": "奖品名称",
+                        "type": "string",
+                        "default": "明信片"
+                    },
+                    "count": {
+                        "description": "奖品数量",
+                        "type": "int",
+                        "default": 200
                     }
                 }
             }

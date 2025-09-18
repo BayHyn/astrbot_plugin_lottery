@@ -14,6 +14,7 @@ class PrizeLevel(Enum):
     FIRST = "一等奖"
     SECOND = "二等奖"
     THIRD = "三等奖"
+    PARTICIPATE = "参与奖"
     NONE = "未中奖"
 
     @property
@@ -23,6 +24,7 @@ class PrizeLevel(Enum):
             PrizeLevel.FIRST: "🥇",
             PrizeLevel.SECOND: "🥈",
             PrizeLevel.THIRD: "🥉",
+            PrizeLevel.PARTICIPATE: "🎁",
             PrizeLevel.NONE: "😢",
         }[self]
 
@@ -150,7 +152,7 @@ class LotteryManager:
                 f"[Lottery] 用户 {user_id} 中奖 {prize_level.value}（{activity.prize_config[prize_level]['name']}）"
             )
             self.persistence.save(self)
-            return f"恭喜您中了{prize_level.value}！", prize_level
+            return f"恭喜您中了{prize_level.value}", prize_level
         else:
             self.persistence.save(self)
             logger.debug(f"[Lottery] 用户 {user_id} 未中奖")
@@ -186,6 +188,15 @@ class LotteryManager:
         self.persistence.save(self)
         return True, "抽奖活动已停止"
 
+    def delete_activity(self, group_id: str) -> bool:
+        """彻底删除本群活动（清空中奖、剩余、配置）"""
+        if group_id not in self.activities:
+            return False
+        del self.activities[group_id]
+        self.persistence.save(self)  # 存盘也删掉
+        logger.debug(f"[Lottery] 群 {group_id} 活动已彻底删除")
+        return True
+
     def get_status_and_winners(self, group_id: str) -> Optional[dict]:
         activity = self.activities.get(group_id)
         if not activity:
@@ -207,6 +218,7 @@ class LotteryManager:
                 "total": cfg["count"],
             }
             for lvl, cfg in activity.prize_config.items()
+            if cfg["probability"] > 0  # 过滤概率0
         ]
 
         # 3. 中奖名单
