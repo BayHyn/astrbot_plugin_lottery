@@ -35,8 +35,8 @@ class LotteryActivity:
         self.group_id = group_id
         self.is_active = False
         self.created_at = datetime.now().isoformat()
-        self.participants = set()  # 已参与用户ID集合
-        self.winners = {}  # {user_id: prize_level}
+        self.participants: dict[str, str] = {}  # ✅ user_id -> nickname
+        self.winners: dict[str, str] = {}  # ✅ user_id -> prize_level
         # 复制模板（含名称）
         self.prize_config = {
             lvl: {
@@ -48,10 +48,10 @@ class LotteryActivity:
             for lvl, cfg in template.items()
         }
 
-    def add_participant(self, user_id: str) -> bool:
+    def add_participant(self, user_id: str, nickname: str) -> bool:
         """添加参与者"""
         if user_id not in self.participants:
-            self.participants.add(user_id)
+            self.participants[user_id] = nickname
             return True
         return False
 
@@ -69,21 +69,35 @@ class LotteryActivity:
             "group_id": self.group_id,
             "is_active": self.is_active,
             "created_at": self.created_at,
-            "participants": list(self.participants),
+            "participants": self.participants,
             "winners": self.winners,
             "prize_config": {lvl.name: cfg for lvl, cfg in self.prize_config.items()},
         }
 
     @classmethod
-    def from_dict(
-        cls, data: dict, template: dict[PrizeLevel, dict]
-    ) -> "LotteryActivity":
-        """从字典创建实例"""
+    def from_dict(cls, data: dict, template: dict[PrizeLevel, dict]) -> "LotteryActivity":
+        """从字典创建实例，并恢复 prize_config"""
         activity = cls(data["group_id"], template)
         activity.is_active = data["is_active"]
         activity.created_at = data["created_at"]
-        activity.participants = set(data["participants"])
+        activity.participants = data["participants"]
         activity.winners = data["winners"]
+
+        # 恢复 prize_config，如果有保存过的配置就覆盖模板
+        saved_config: dict[str, dict] = data.get("prize_config", {})
+        for lvl_name, cfg in saved_config.items():
+            try:
+                lvl = PrizeLevel[lvl_name]  # 恢复枚举
+                if lvl in activity.prize_config:
+                    activity.prize_config[lvl] = {
+                        "probability": cfg["probability"],
+                        "count": cfg["count"],
+                        "remaining": cfg["remaining"],
+                        "name": cfg["name"],
+                    }
+            except KeyError:
+                logger.warning(f"[LotteryActivity] 忽略未知奖项等级: {lvl_name}")
+
         return activity
 
 
@@ -125,7 +139,7 @@ class LotteryManager:
         return True, "本群的抽奖活动已开启"
 
     def draw_lottery(
-        self, group_id: str, user_id: str
+        self, group_id: str, user_id: str, nickname:str
     ) -> Tuple[str, Optional[PrizeLevel]]:
         """抽奖"""
         # 检查活动是否存在且激活
@@ -142,9 +156,11 @@ class LotteryManager:
             logger.debug(f"[Lottery] 用户 {user_id} 已参与过，拒绝重复抽奖")
             return "您已经参与过本次抽奖", None
 
+        # 记录参与者
+        activity.add_participant(user_id, nickname)
+
         # 执行抽奖
         prize_level = self._draw_prize(activity)
-        activity.add_participant(user_id)
 
         if prize_level != PrizeLevel.NONE:
             activity.add_winner(user_id, prize_level)

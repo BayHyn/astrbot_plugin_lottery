@@ -33,14 +33,15 @@ class LotteryPlugin(Star):
     @filter.command("抽奖")
     async def draw_lottery(self, event: AstrMessageEvent):
         """参与抽奖"""
-        msg, prize_level = self.manager.draw_lottery(
-            group_id=event.get_group_id(), user_id=event.get_sender_id()
-        )
+        group_id = event.get_group_id()
+        user_id = event.get_sender_id()
+        nickname = await get_nickname(event, user_id)
+        msg, prize_level = self.manager.draw_lottery(group_id, user_id, nickname)
 
         if not prize_level:
             yield event.plain_result(msg)
             return
-        activity = self.manager.activities.get(event.get_group_id())
+        activity = self.manager.activities.get(group_id)
         if not activity or prize_level not in activity.prize_config:
             yield event.plain_result(msg)   # 降级回退
             return
@@ -115,14 +116,19 @@ class LotteryPlugin(Star):
     @filter.event_message_type(filter.EventMessageType.GROUP_MESSAGE)
     @filter.command("中奖名单")
     async def winner_list(self, event: AstrMessageEvent):
-        data = self.manager.get_status_and_winners(event.get_group_id())
+        group_id = event.get_group_id()
+        activity = self.manager.activities.get(group_id)
+        if not activity:
+            yield event.plain_result("当前群聊没有抽奖活动")
+            return
+        data = self.manager.get_status_and_winners(group_id)
         if not data or not data["winners_by_lvl"]:
             yield event.plain_result("暂无中奖者" if data else "当前群聊没有抽奖活动")
             return
 
         lines = ["🏆 中奖名单："]
         for lvl, uids in data["winners_by_lvl"].items():
-            user_names = [await get_nickname(event, str(uid)) for uid in uids]
+            user_names = [activity.participants.get(uid, uid) for uid in uids]
             lines.append(f"{lvl}：{'、'.join(user_names)}")
         yield event.plain_result("\n".join(lines))
 

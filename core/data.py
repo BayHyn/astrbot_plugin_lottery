@@ -24,9 +24,11 @@ class LotteryPersistence:
             with open(self.file_path, "w", encoding="utf-8") as f:
                 json.dump(payload, f, ensure_ascii=False, indent=2)
             return True
-        except Exception as e:
-            logger.error(f"[LotteryPersistence] 保存失败: {e}")
-            return False
+        except (OSError, PermissionError) as e:
+            logger.error(f"[LotteryPersistence] 文件写入失败: {e}")
+        except TypeError as e:
+            logger.error(f"[LotteryPersistence] 序列化失败: {e}")
+        return False
 
     def load(self, manager: "LotteryManager") -> bool:
         if not os.path.exists(self.file_path):
@@ -43,6 +45,8 @@ class LotteryPersistence:
                 for gid, d in payload.get("activities", {}).items()
             }
             return True
-        except Exception as e:
-            logger.error(f"[LotteryPersistence] 加载失败: {e}")
-            return False
+        except (OSError, PermissionError) as e:
+            logger.error(f"[LotteryPersistence] 文件读取失败: {e}")
+        except json.JSONDecodeError as e:
+            logger.error(f"[LotteryPersistence] JSON 解析失败: {e}")
+        return False
