@@ -69,7 +69,10 @@ class LotteryPlugin(Star):
             yield event.plain_result("概率须在 0-1 之间，数量须为正整数")
             return
 
-        lvl = PrizeLevel[prize_name.replace("奖", "").upper()]
+        lvl = PrizeLevel.from_name(prize_name)
+        if not lvl:
+            yield event.plain_result(f"未知的奖项等级：{prize_name}")
+            return
 
         ok = self.manager.set_prize_config(event.get_group_id(), lvl, prob, count)
         if not ok:

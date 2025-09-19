@@ -28,6 +28,15 @@ class PrizeLevel(Enum):
             PrizeLevel.NONE: "😢",
         }[self]
 
+    @classmethod
+    def from_name(cls, name: str) -> "PrizeLevel | None":
+        """通过中文名称查找枚举成员"""
+        for lvl in cls:
+            if lvl.value == name:
+                return lvl
+        return None
+
+
 class LotteryActivity:
     """抽奖活动类"""
 
